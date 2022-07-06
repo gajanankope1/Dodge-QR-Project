@@ -9,25 +9,37 @@ const Packages = mongoose.model("packages", {
     },
     price: {
         type: Number,
-        required: true,
-        unique: true
+        required: true
     },
-    message:{
-        type:Boolean,
-        required:true
+    message: {
+        type: Boolean,
+        required: true
     },
-    call:{
-        type:Boolean,
-        required:true
+    call: {
+        type: Boolean,
+        required: true
     }
 });
 
-// const Messages = mongoose.model("messages", {
-//     message: {
-//         type: String,
-//         unique: true,
-//         required:true
-//     }
-// });
+const Messages = mongoose.model("messages", {
+    message: {
+        type: String,
+        unique: true,
+        required: true
+    }
+});
 
-module.exports =Packages;
+const SubCategaries = mongoose.model("subcategaries", {
+    title: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    type: {
+        type: String,
+        required: true
+    },
+    messages: [{ id:Number }]
+});
+
+module.exports = { Packages, Messages, SubCategaries };

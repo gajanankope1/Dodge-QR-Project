@@ -1,6 +1,7 @@
 const express = require("express");
 const Users = require("../models/users");
-const Packages = require("../models/admin");
+const Purchase_History = require("../models/purchase_history");
+const { Packages } = require("../models/admin");
 const auth = require("../middlewere/auth");
 const router = new express.Router();
 
@@ -42,7 +43,7 @@ router.get("/users/user_profile", auth, async (req, res) => {
     res.send(req.user);
 });
 
-router.get("/users/all_Packages", async (req, res) => {
+router.get("/users/all_Packages", auth, (req, res) => {
     Packages.find({}).then((packages) => {
         res.status(200).send(packages);
     }).catch((e) => {
@@ -50,7 +51,34 @@ router.get("/users/all_Packages", async (req, res) => {
     });
 });
 
+router.post("/users/purchase_package", auth, async (req, res) => {
+    const user_id = req.user._id;
+    const package_id = req.body.package_id;
+    const obj = {
+        user_id,
+        package_id
+    }
+    const purchased_package = new Purchase_History(obj);
+    try {
+        await purchased_package.save();
+        res.send(purchased_package);
+    } catch (e) {
+        res.status(404).send(e);
+    }
 
+});
+
+router.patch("/users/select_subcategary", auth, async (req, res) => {
+    const select_device = {
+        subcategary_id: req.body.subcategary_id,
+        devicelink_date: new Date()
+    }
+    Purchase_History.findOneAndUpdate({ user_id: req.user._id, package_id: req.body.package_id }, select_device, { new: true }).then((purchase_history) => {
+        res.status(200).send(purchase_history);
+    }).catch((e) => {
+        res.status(404).send(e);
+    })
+});
 
 
 module.exports = router;
