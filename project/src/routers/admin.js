@@ -107,5 +107,14 @@ router.post("/admin/add_subcategary", async (req, res) => {
     }
 });
 
+router.get("/admin/view_subcategaries",async (req,res)=>{
+    try{
+    const subcategaries=await models.SubCategaries.find({});
+    res.status(200).send(subcategaries);
+    }catch(e){
+        res.status(400).send(e)
+    }
+});
+
 
 module.exports = router;
