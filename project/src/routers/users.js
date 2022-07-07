@@ -58,6 +58,15 @@ router.post("/users/purchase_package", auth, async (req, res) => {
         user_id,
         package_id
     }
+
+    try {
+        const packages = await Purchase_History.find({ user_id });
+        console.log(packages);
+        
+    } catch (e) {
+        res.status(404).send(e)
+    }
+    //return stop
     const purchased_package = new Purchase_History(obj);
     try {
         await purchased_package.save();
@@ -65,7 +74,6 @@ router.post("/users/purchase_package", auth, async (req, res) => {
     } catch (e) {
         res.status(404).send(e);
     }
-
 });
 
 router.patch("/users/select_subcategary", auth, async (req, res) => {

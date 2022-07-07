@@ -39,7 +39,11 @@ const SubCategaries = mongoose.model("subcategaries", {
         type: String,
         required: true
     },
-    messages: [{ id:Number }]
+    messages: [
+        {
+            _id: Object
+        }
+    ]
 });
 
 module.exports = { Packages, Messages, SubCategaries };
