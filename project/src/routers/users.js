@@ -97,7 +97,18 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
 });
 
 router.get("/users/purchase_history", auth, async (req, res) => {
-//    const profile=Prof
+    const package = await Packages.aggregate([
+        {
+            $lookup: {
+                from: "purchasehistories",
+                localField: "package_id",
+                foreignField: "_id",
+                as: "packages"
+            }
+        }
+    ], function (error, data) {
+        return res.json(data);
+    });
 });
 
 

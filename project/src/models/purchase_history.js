@@ -6,15 +6,18 @@ const jwt = require("jsonwebtoken");
 
 Purchase_History = mongoose.model("purchasehistories", {
     user_id: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref:"Users"
     },
     package_id: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref:"Packages"
     },
     subcategary_id:{
-        type:String,
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"SubCategaries"
     },
     purchase_date: {
         type: Date,
