@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 
+
 const Packages = mongoose.model("packages", {
     package: {
         type: Number,

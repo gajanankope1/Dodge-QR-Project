@@ -43,6 +43,15 @@ router.get("/users/user_profile", auth, async (req, res) => {
     res.send(req.user);
 });
 
+router.patch("/users/update_user_profile", auth, async (req, res) => {
+    try{
+    const user=await Users.findOneAndUpdate({_id:req.user._id},req.body,{new:true});
+    res.status(200).send(user)
+    }catch(e){
+        res.status(404).send(e)
+    }
+});
+
 router.get("/users/all_Packages", auth, (req, res) => {
     Packages.find({}).then((packages) => {
         res.status(200).send(packages);
@@ -97,16 +106,29 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
 });
 
 router.get("/users/purchase_history", auth, async (req, res) => {
-    const package = await Packages.aggregate([
+    const package = await Purchase_History.aggregate([
+        {
+            $match: {
+                user_id:req.user._id
+            }
+        },
         {
             $lookup: {
-                from: "purchasehistories",
+                from: "packages",
                 localField: "package_id",
                 foreignField: "_id",
-                as: "packages"
+                as: "package_info"
+            }
+        },
+        {
+            $lookup: {
+                from: "subcategaries",
+                localField: "subcategary_id",
+                foreignField: "_id",
+                as: "device_info"
             }
         }
-    ], function (error, data) {
+    ], function (err, data) {
         return res.json(data);
     });
 });

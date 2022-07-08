@@ -1,21 +1,29 @@
 const express = require("express");
 const models = require("../models/admin");
-const Users=require("../models/users");
+const Users = require("../models/users");
+const Purchase_History = require("../models/purchase_history");
 const router = new express.Router();
 
-const adminInfo = {
-    email: "admin@gmail.com",
-    password: "admin@12"
-}
-
-router.get("/admin/login", (req, res) => {
-    if (JSON.stringify(adminInfo) == JSON.stringify(req.body)) {
-        res.status(200).send(adminInfo);
-    }
-    else {
-        res.status(404).send("Enter Currect Credentials");
-    }
+router.post("/admin/login",async (req, res) => {
+    // try {
+    //     const admin = await Admin.findByCredentials(req.body.email, req.body.password);
+    //     const token = await admin.generateAuthToken();
+    //     res.send({ admin, token });
+    // } catch (e) {
+    //     res.status(404).send(e);
+    // }
 });
+
+router.get("/admin/admin_profile", (req, res) => {
+    res.send(adminInfo);
+})
+
+router.patch("/admin/admin_update_profile", (req, res) => {
+    adminInfo.name = req.body.name;
+    adminInfo.address = req.body.address;
+    adminInfo.mobile_number = req.body.mobile_number;
+    res.status(200).send(adminInfo);
+})
 
 router.get("/admin/all_packages", (req, res) => {
     models.Packages.find({}).then((packages) => {
@@ -62,6 +70,16 @@ router.post("/admin/add_message", async (req, res) => {
         res.send(404).send(e);
     }
 });
+
+router.patch("/admin/update_message", async (req, res) => {
+    try {
+        const msg = await models.Messages.findOneAndUpdate({ _id: req.body.id }, req.body, { new: true });
+        res.status(200).send(msg);
+    } catch (e) {
+        res.status(404).send(e)
+    }
+});
+
 router.get("/admin/all_messages", async (req, res) => {
     models.Messages.find({}).then((messages) => {
         res.status(200).send(messages);
@@ -80,10 +98,33 @@ router.delete("/admin/delete_message", (req, res) => {
 });
 
 router.get("/admin/all_users", async (req, res) => {
-    Users.find({}).then((users) => {
-        res.status(200).send(users);
-    }).catch((e) => {
-        res.status(404).send(e);
+    const package = await Purchase_History.aggregate([
+        {
+            $lookup: {
+                from: "users",
+                localField: "user_id",
+                foreignField: "_id",
+                as: "user_info"
+            }
+        },
+        {
+            $lookup: {
+                from: "packages",
+                localField: "package_id",
+                foreignField: "_id",
+                as: "package_info"
+            }
+        },
+        {
+            $lookup: {
+                from: "subcategaries",
+                localField: "subcategary_id",
+                foreignField: "_id",
+                as: "device_info"
+            }
+        }
+    ], function (err, data) {
+        return res.json(data);
     });
 });
 
@@ -107,11 +148,30 @@ router.post("/admin/add_subcategary", async (req, res) => {
     }
 });
 
-router.get("/admin/view_subcategaries",async (req,res)=>{
-    try{
-    const subcategaries=await models.SubCategaries.find({});
-    res.status(200).send(subcategaries);
-    }catch(e){
+router.patch("/admin/update_subcategary", async (req, res) => {
+    try {
+        const subcategary = await models.SubCategaries.findOneAndUpdate({ _id: req.body.id }, req.body, { new: true });
+        res.status(200).send(subcategary);
+    } catch (e) {
+        res.status(404).send(e)
+    }
+});
+
+router.delete("/admin/delete_subcategary", async (req, res) => {
+    try {
+        const subcategary = await models.SubCategaries.findOneAndDelete(req.body, { new: true });
+
+        res.send(subcategary);
+    } catch (e) {
+        res.status(404).send("subcategary is not present");
+    }
+});
+
+router.get("/admin/view_subcategaries", async (req, res) => {
+    try {
+        const subcategaries = await models.SubCategaries.find({});
+        res.status(200).send(subcategaries);
+    } catch (e) {
         res.status(400).send(e)
     }
 });
