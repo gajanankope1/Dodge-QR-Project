@@ -28,6 +28,14 @@ router.post("/users/login", async (req, res) => {
     }
 });
 
+router.post("/users/user_logout",auth,async(req,res)=>{
+    try{
+    res.status(200).send("looged Out");
+    }catch(e){
+        res.status(404).send(e)
+    }
+});
+
 router.patch("/users/forgot_password", async (req, res) => {
     try {
         const user = await Users.findOneAndUpdate({ email: req.body.email }, { password: req.body.password }, { new: true });

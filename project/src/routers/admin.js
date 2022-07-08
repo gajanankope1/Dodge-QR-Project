@@ -1,28 +1,39 @@
 const express = require("express");
 const models = require("../models/admin");
 const Users = require("../models/users");
+const adminAuth = require("../middlewere/adminAuth");
 const Purchase_History = require("../models/purchase_history");
 const router = new express.Router();
 
-router.post("/admin/login",async (req, res) => {
-    // try {
-    //     const admin = await Admin.findByCredentials(req.body.email, req.body.password);
-    //     const token = await admin.generateAuthToken();
-    //     res.send({ admin, token });
-    // } catch (e) {
-    //     res.status(404).send(e);
-    // }
+router.post("/admin/login", async (req, res) => {
+    try {
+        const admin = await models.Admin.findByCredentials(req.body.email, req.body.password);
+        const token = await admin.generateAuthToken();
+        res.send({ admin, token });
+    } catch (e) {
+        res.status(404).send(e);
+    }
 });
 
-router.get("/admin/admin_profile", (req, res) => {
-    res.send(adminInfo);
+router.post("/admin/admin_logout",adminAuth,async(req,res)=>{
+    try{
+    res.status(200).send("looged Out");
+    }catch(e){
+        res.status(404).send(e)
+    }
+});
+
+router.get("/admin/admin_profile", adminAuth, (req, res) => {
+    res.send(req.admin);
 })
 
-router.patch("/admin/admin_update_profile", (req, res) => {
-    adminInfo.name = req.body.name;
-    adminInfo.address = req.body.address;
-    adminInfo.mobile_number = req.body.mobile_number;
-    res.status(200).send(adminInfo);
+router.patch("/admin/admin_update_profile", adminAuth, async (req, res) => {
+    try {
+        const admin = await models.Admin.findOneAndUpdate({ _id: req.admin._id }, req.body, { new: true });
+        res.status(200).send(admin)
+    } catch (e) {
+        res.status(404).send(e)
+    }
 })
 
 router.get("/admin/all_packages", (req, res) => {
