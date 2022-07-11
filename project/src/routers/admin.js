@@ -1,9 +1,12 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const models = require("../models/admin");
 const Users = require("../models/users");
 const adminAuth = require("../middlewere/adminAuth");
 const Purchase_History = require("../models/purchase_history");
 const router = new express.Router();
+
+const JWT_SECRET = "some super secret";
 
 router.post("/admin/login", async (req, res) => {
     try {
@@ -15,10 +18,41 @@ router.post("/admin/login", async (req, res) => {
     }
 });
 
-router.post("/admin/admin_logout",adminAuth,async(req,res)=>{
-    try{
-    res.status(200).send("looged Out");
-    }catch(e){
+router.post("/admin/forgot-password", async (req, res, next) => {
+    const admin = await models.Admin.findOne({ email: req.body.email })
+    if (!admin) {
+        return res.send("admin is not registered");
+    } else {
+        const secret = JWT_SECRET + admin.password;
+        const payload = {
+            email: admin.email,
+            _id: admin._id
+        }
+        const token = jwt.sign(payload, secret, { expiresIn: "10m" });
+        const link = `http://localhost:3000/admin/reset-password/${admin._id}/${token}`;
+        res.send(link);
+    }
+})
+router.patch("/admin/reset-password/:id/:token", async (req, res, next) => {
+    try {
+        if (req.body.newPassword == req.body.confirmPassword) {
+            const admin = await models.Admin.findByIdAndUpdate({ _id: req.params.id }, { password: req.body.newPassword }, { new: true });
+            res.send(admin)
+        }
+        else {
+            res.send("both passwords does not match");
+        }
+    } catch (e) {
+        res.send(e.message);
+    }
+})
+
+
+
+router.post("/admin/admin_logout", adminAuth, async (req, res) => {
+    try {
+        res.status(200).send("looged Out");
+    } catch (e) {
         res.status(404).send(e)
     }
 });

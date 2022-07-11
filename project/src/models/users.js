@@ -66,7 +66,8 @@ userSchema.statics.findByCredentials = async (email, password) => {
         throw new Error("unable to find user");
     }
 
-    const isMatch = await bcrypt.compare(password, user.password)
+    // const isMatch = await bcrypt.compare(password, user.password)
+    const isMatch=password==user.password;
 
     if (!isMatch) {
         throw new Error("unable to find user")
@@ -77,15 +78,27 @@ userSchema.statics.findByCredentials = async (email, password) => {
 }
 
 //middelewere for password security
-userSchema.pre("save", async function (next) {
-    const user = this;
+// userSchema.pre("save", async function (next) {
+//     const user = this;
 
-    if (user.isModified("password")) {
-        user.password = await bcrypt.hash(user.password, 8)
-    }
+//     if (user.isModified("password")) {
+//         user.password = await bcrypt.hash(user.password, 8)
+//     }
 
-    next();
-})
+//     next();
+// })
+
+// userSchema.pre("findByIdAndUpdate", async function (next) {
+//     const user = this;
+//     console.log(user);
+
+//     if (user.isModified("password")) {
+//         user.password = await bcrypt.hash(user.password, 8)
+//     }
+
+//     next();
+// })
+
 
 const Users = mongoose.model("users", userSchema);
 

@@ -1,9 +1,12 @@
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const Users = require("../models/users");
 const Purchase_History = require("../models/purchase_history");
 const { Packages, SubCategaries, Messages } = require("../models/admin");
 const auth = require("../middlewere/auth");
 const router = new express.Router();
+
+const JWT_SECRET = "some super secret";
 
 router.post("/users/register", async (req, res) => {
     const user = new Users(req.body);
@@ -28,34 +31,53 @@ router.post("/users/login", async (req, res) => {
     }
 });
 
-router.post("/users/user_logout",auth,async(req,res)=>{
-    try{
-    res.status(200).send("looged Out");
-    }catch(e){
+router.post("/users/user_logout", auth, async (req, res) => {
+    try {
+        res.status(200).send("looged Out");
+    } catch (e) {
         res.status(404).send(e)
     }
 });
 
-router.patch("/users/forgot_password", async (req, res) => {
-    try {
-        const user = await Users.findOneAndUpdate({ email: req.body.email }, { password: req.body.password }, { new: true });
-        if (!user)
-            return res.status(400).send("user.is not available");
-        res.send(user);
-    } catch (e) {
-        res.status(400).send(e);
+router.post("/users/forgot-password", async (req, res, next) => {
+    const user = await Users.findOne({ email: req.body.email })
+    if (!user) {
+        return res.send("user is not registered");
+    } else {
+        const secret = JWT_SECRET + user.password;
+        const payload = {
+            email: user.email,
+            _id: user._id
+        }
+        const token = jwt.sign(payload, secret, { expiresIn: "10m" });
+        const link = `http://localhost:3000/users/reset-password/${user._id}/${token}`;
+        res.send(link);
     }
-});
+})
+router.patch("/users/reset-password/:id/:token", async (req, res, next) => {
+    try {
+        if (req.body.newPassword == req.body.confirmPassword) {
+            const user = await Users.findByIdAndUpdate({ _id: req.params.id }, { password: req.body.newPassword }, { new: true });
+            res.send(user)
+        }
+        else {
+            res.send("both passwords does not match");
+        }
+    } catch (e) {
+        res.send(e.message);
+    }
+})
+
 
 router.get("/users/user_profile", auth, async (req, res) => {
     res.send(req.user);
 });
 
 router.patch("/users/update_user_profile", auth, async (req, res) => {
-    try{
-    const user=await Users.findOneAndUpdate({_id:req.user._id},req.body,{new:true});
-    res.status(200).send(user)
-    }catch(e){
+    try {
+        const user = await Users.findOneAndUpdate({ _id: req.user._id }, req.body, { new: true });
+        res.status(200).send(user)
+    } catch (e) {
         res.status(404).send(e)
     }
 });
@@ -100,12 +122,17 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
                 break;
             }
             else if (!val) {
-                const purchase_history = myfun();
-                res.status(200).send("selected subcategary")
+                myfun();
+                res.status(200).send("selected SubCategary");
                 break;
             }
             async function myfun() {
-                return await Purchase_History.updateOne({ _id: pkg._id }, select_device, { new: true });
+                await Purchase_History.updateOne({ _id: pkg._id }, select_device, { new: true });
+                // fetch("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=hi").
+                // then((response) => {
+                //     console.log(response.url);
+                // });
+                return;
             }
         }
     } catch (e) {
@@ -117,7 +144,7 @@ router.get("/users/purchase_history", auth, async (req, res) => {
     const package = await Purchase_History.aggregate([
         {
             $match: {
-                user_id:req.user._id
+                user_id: req.user._id
             }
         },
         {
