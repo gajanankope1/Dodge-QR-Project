@@ -16,7 +16,6 @@ const userSchema = new mongoose.Schema({
     },
     whatsapp_secondary_number: {
         type: Number,
-        required: true,
         length: 10
     },
     emergency_number: {
@@ -35,6 +34,8 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 8
     },
+    resetToken: String,
+    expireToken: Date,
     address: {
         type: String,
         required: true
@@ -67,7 +68,7 @@ userSchema.statics.findByCredentials = async (email, password) => {
     }
 
     // const isMatch = await bcrypt.compare(password, user.password)
-    const isMatch=password==user.password;
+    const isMatch = password == user.password;
 
     if (!isMatch) {
         throw new Error("unable to find user")

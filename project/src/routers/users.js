@@ -1,8 +1,12 @@
 const express = require("express");
+const helper = require("../middlewere/helper");
+const qrcode = require("qrcode");
 const jwt = require("jsonwebtoken");
 const Users = require("../models/users");
 const Purchase_History = require("../models/purchase_history");
-const { Packages, SubCategaries, Messages } = require("../models/admin");
+const Packages = require("../models/admin/packages");
+const SubCategaries = require("../models/admin/subcategaries");
+const Messages = require("../models/admin/messages");
 const auth = require("../middlewere/auth");
 const router = new express.Router();
 
@@ -51,14 +55,20 @@ router.post("/users/forgot-password", async (req, res, next) => {
         }
         const token = jwt.sign(payload, secret, { expiresIn: "10m" });
         const link = `http://localhost:3000/users/reset-password/${user._id}/${token}`;
-        res.send(link);
+        helper(user.email, link);
+        res.send("Reset Password Link send on your email");
     }
 })
-router.patch("/users/reset-password/:id/:token", async (req, res, next) => {
+
+router.get("/users/reset-password/:id/:token", (req, res, next) => {
+    res.render("index");
+})
+
+router.post("/users/reset-password/:id/:token", async (req, res, next) => {
     try {
-        if (req.body.newPassword == req.body.confirmPassword) {
-            const user = await Users.findByIdAndUpdate({ _id: req.params.id }, { password: req.body.newPassword }, { new: true });
-            res.send(user)
+        if (req.body.newpassword == req.body.confirmpassword) {
+            await Users.findByIdAndUpdate({ _id: req.params.id }, { password: req.body.newpassword }, { new: true });
+            res.send("password updated");
         }
         else {
             res.send("both passwords does not match");
@@ -67,7 +77,6 @@ router.patch("/users/reset-password/:id/:token", async (req, res, next) => {
         res.send(e.message);
     }
 })
-
 
 router.get("/users/user_profile", auth, async (req, res) => {
     res.send(req.user);
@@ -128,10 +137,7 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
             }
             async function myfun() {
                 await Purchase_History.updateOne({ _id: pkg._id }, select_device, { new: true });
-                // fetch("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=hi").
-                // then((response) => {
-                //     console.log(response.url);
-                // });
+
                 return;
             }
         }

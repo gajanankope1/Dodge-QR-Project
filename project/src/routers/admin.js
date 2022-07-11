@@ -1,6 +1,10 @@
 const express = require("express");
+const helper = require("../middlewere/helper");
 const jwt = require("jsonwebtoken");
-const models = require("../models/admin");
+const Admin = require("../models/admin/admin");
+const Messages = require("../models/admin/messages");
+const Packages= require("../models/admin/packages");
+const SubCategaries= require("../models/admin/subcategaries");
 const Users = require("../models/users");
 const adminAuth = require("../middlewere/adminAuth");
 const Purchase_History = require("../models/purchase_history");
@@ -10,7 +14,7 @@ const JWT_SECRET = "some super secret";
 
 router.post("/admin/login", async (req, res) => {
     try {
-        const admin = await models.Admin.findByCredentials(req.body.email, req.body.password);
+        const admin = await Admin.findByCredentials(req.body.email, req.body.password);
         const token = await admin.generateAuthToken();
         res.send({ admin, token });
     } catch (e) {
@@ -19,7 +23,7 @@ router.post("/admin/login", async (req, res) => {
 });
 
 router.post("/admin/forgot-password", async (req, res, next) => {
-    const admin = await models.Admin.findOne({ email: req.body.email })
+    const admin = await Admin.findOne({ email: req.body.email })
     if (!admin) {
         return res.send("admin is not registered");
     } else {
@@ -30,14 +34,20 @@ router.post("/admin/forgot-password", async (req, res, next) => {
         }
         const token = jwt.sign(payload, secret, { expiresIn: "10m" });
         const link = `http://localhost:3000/admin/reset-password/${admin._id}/${token}`;
-        res.send(link);
+        helper(admin.email, link);
+        res.send("Reset Password Link send on your email");
     }
 })
-router.patch("/admin/reset-password/:id/:token", async (req, res, next) => {
+
+router.get("/admin/reset-password/:id/:token", (req, res, next) => {
+    res.render("index");
+})
+
+router.post("/admin/reset-password/:id/:token", async (req, res, next) => {
     try {
-        if (req.body.newPassword == req.body.confirmPassword) {
-            const admin = await models.Admin.findByIdAndUpdate({ _id: req.params.id }, { password: req.body.newPassword }, { new: true });
-            res.send(admin)
+        if (req.body.newpassword == req.body.confirmpassword) {
+            await Admin.findByIdAndUpdate({ _id: req.params.id }, { password: req.body.newpassword }, { new: true });
+            res.send("password updaed")
         }
         else {
             res.send("both passwords does not match");
@@ -63,7 +73,7 @@ router.get("/admin/admin_profile", adminAuth, (req, res) => {
 
 router.patch("/admin/admin_update_profile", adminAuth, async (req, res) => {
     try {
-        const admin = await models.Admin.findOneAndUpdate({ _id: req.admin._id }, req.body, { new: true });
+        const admin = await Admin.findOneAndUpdate({ _id: req.admin._id }, req.body, { new: true });
         res.status(200).send(admin)
     } catch (e) {
         res.status(404).send(e)
@@ -71,7 +81,7 @@ router.patch("/admin/admin_update_profile", adminAuth, async (req, res) => {
 })
 
 router.get("/admin/all_packages", (req, res) => {
-    models.Packages.find({}).then((packages) => {
+    Packages.find({}).then((packages) => {
         res.status(200).send(packages);
     }).catch((e) => {
         res.status(404).send(e);
@@ -79,7 +89,7 @@ router.get("/admin/all_packages", (req, res) => {
 });
 
 router.post("/admin/add_package", async (req, res) => {
-    const package = new models.Packages(req.body);
+    const package = new Packages(req.body);
     try {
         await package.save();
         res.send(package);
@@ -89,7 +99,7 @@ router.post("/admin/add_package", async (req, res) => {
 });
 
 router.patch("/admin/update_package", (req, res) => {
-    models.Packages.findOneAndUpdate({ package: req.body.package }, req.body, { new: true }).then((package) => {
+    Packages.findOneAndUpdate({ package: req.body.package }, req.body, { new: true }).then((package) => {
         res.status(200).send(package);
     }).catch((e) => {
         res.status(404).send(e);
@@ -97,7 +107,7 @@ router.patch("/admin/update_package", (req, res) => {
 });
 
 router.delete("/admin/delete_package", (req, res) => {
-    models.Packages.findOneAndDelete(req.body, { new: true }).then((package) => {
+    Packages.findOneAndDelete(req.body, { new: true }).then((package) => {
         if (!package)
             return res.status(404).send("package is not");
         res.send(package);
@@ -107,7 +117,7 @@ router.delete("/admin/delete_package", (req, res) => {
 });
 
 router.post("/admin/add_message", async (req, res) => {
-    const message = new models.Messages(req.body);
+    const message = new Messages(req.body);
     try {
         await message.save();
         res.send(message);
@@ -118,7 +128,7 @@ router.post("/admin/add_message", async (req, res) => {
 
 router.patch("/admin/update_message", async (req, res) => {
     try {
-        const msg = await models.Messages.findOneAndUpdate({ _id: req.body.id }, req.body, { new: true });
+        const msg = await Messages.findOneAndUpdate({ _id: req.body.id }, req.body, { new: true });
         res.status(200).send(msg);
     } catch (e) {
         res.status(404).send(e)
@@ -126,14 +136,14 @@ router.patch("/admin/update_message", async (req, res) => {
 });
 
 router.get("/admin/all_messages", async (req, res) => {
-    models.Messages.find({}).then((messages) => {
+    Messages.find({}).then((messages) => {
         res.status(200).send(messages);
     }).catch((e) => {
         res.status(404).send(e);
     });
 });
 router.delete("/admin/delete_message", (req, res) => {
-    models.Messages.findOneAndDelete(req.body, { new: true }).then((message) => {
+    Messages.findOneAndDelete(req.body, { new: true }).then((message) => {
         if (!message)
             return res.status(404).send("package is not");
         res.send(message);
@@ -184,7 +194,7 @@ router.delete("/admin/delete_user", (req, res) => {
 });
 
 router.post("/admin/add_subcategary", async (req, res) => {
-    const sub_categary = new models.SubCategaries(req.body);
+    const sub_categary = new SubCategaries(req.body);
     try {
         await sub_categary.save();
         res.send(sub_categary);
@@ -195,7 +205,7 @@ router.post("/admin/add_subcategary", async (req, res) => {
 
 router.patch("/admin/update_subcategary", async (req, res) => {
     try {
-        const subcategary = await models.SubCategaries.findOneAndUpdate({ _id: req.body.id }, req.body, { new: true });
+        const subcategary = await SubCategaries.findOneAndUpdate({ _id: req.body.id }, req.body, { new: true });
         res.status(200).send(subcategary);
     } catch (e) {
         res.status(404).send(e)
@@ -204,7 +214,7 @@ router.patch("/admin/update_subcategary", async (req, res) => {
 
 router.delete("/admin/delete_subcategary", async (req, res) => {
     try {
-        const subcategary = await models.SubCategaries.findOneAndDelete(req.body, { new: true });
+        const subcategary = await SubCategaries.findOneAndDelete(req.body, { new: true });
 
         res.send(subcategary);
     } catch (e) {
@@ -214,7 +224,7 @@ router.delete("/admin/delete_subcategary", async (req, res) => {
 
 router.get("/admin/view_subcategaries", async (req, res) => {
     try {
-        const subcategaries = await models.SubCategaries.find({});
+        const subcategaries = await SubCategaries.find({});
         res.status(200).send(subcategaries);
     } catch (e) {
         res.status(400).send(e)
