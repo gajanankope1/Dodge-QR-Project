@@ -132,12 +132,14 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
             }
             else if (!val) {
                 myfun();
-                res.status(200).send("selected SubCategary");
+                res.status(200).send("QR code send to your email");
                 break;
             }
             async function myfun() {
                 await Purchase_History.updateOne({ _id: pkg._id }, select_device, { new: true });
-
+                await qrcode.toString("package QR code", { type: 'png' }, function (err, url) {
+                    helper(req.user.email,url);
+                })
                 return;
             }
         }

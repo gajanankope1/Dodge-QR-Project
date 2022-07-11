@@ -17,8 +17,7 @@ function helper(email, link) {
         from: 'no_reply@prometteur.in',
         to: email,
         subject: 'Sending Email using Node.js[nodemailer]',
-        text:`Reset Password Link:
-                ${link}`
+        text:link
     };
 
     transporter.sendMail(mailOptions, function (error, info) {
