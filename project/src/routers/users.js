@@ -137,8 +137,9 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
             }
             async function myfun() {
                 await Purchase_History.updateOne({ _id: pkg._id }, select_device, { new: true });
-                await qrcode.toString("package QR code", { type: 'png' }, function (err, url) {
-                    helper(req.user.email,url);
+                const link = `http://localhost:3000/users/device-link/${req.user._id}/${req.body.package_id}/${req.body.subcategary_id}`;
+                await qrcode.toDataURL(link, function (err, url) {
+                    helper(req.user.email, url);
                 })
                 return;
             }
@@ -147,6 +148,32 @@ router.patch("/users/select_subcategary", auth, async (req, res) => {
         res.status(404).send(e)
     }
 });
+
+router.get("/users/device-link/:uid/:pid/:sid", async (req, res, next) => {
+    const user = await Users.findOne({ _id: req.params.uid });
+    const package = await Packages.findOne({ _id: req.params.pid });
+    const deviceInfo = await SubCategaries.findOne({ _id: req.params.sid });
+    var message = [];
+    for (let i = 0; i < deviceInfo.messages.length;i++) {
+        const msg=await Messages.findOne({ _id:deviceInfo.messages[i]._id });
+        message[i]=msg.message;
+    }
+    console.log(message);
+    res.render("qrinfo", {
+        package: package.package,
+        package_price: package.price,
+        package_message: package.message,
+        package_call: package.call,
+
+        user_name: user.name,
+        user_address: user.address,
+        whatsaap_number: user.whatsapp_primary_number,
+        call_number: user.emergency_number,
+
+        device_name: deviceInfo.title,
+        device_messages:message
+    });
+})
 
 router.get("/users/purchase_history", auth, async (req, res) => {
     const package = await Purchase_History.aggregate([
