@@ -10,6 +10,10 @@ const Messages = require("../models/admin/messages");
 const auth = require("../middlewere/auth");
 const router = new express.Router();
 
+const { OAuth2Client } = require('google-auth-library');
+const CLIENT_ID = '868427010265-j10im9mk0h35er7oj4htou7qq6rrk18l.apps.googleusercontent.com'
+const client = new OAuth2Client(CLIENT_ID);
+
 const JWT_SECRET = "some super secret";
 
 router.post("/users/register", async (req, res) => {
@@ -34,6 +38,30 @@ router.post("/users/login", async (req, res) => {
         res.status(404).send(e);
     }
 });
+
+router.get("/users/loginwithgoogle", (req, res, next) => {
+    res.render("login");
+});
+
+router.post('/users/loginwithgoogle', (req, res) => {
+    let token = req.body.token;
+
+    async function verify() {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+    }
+    verify()
+        .then(() => {
+            res.cookie('session-token', token);
+            console.log('loggin successfully')
+        })
+        .catch(console.error);
+
+})
 
 router.post("/users/user_logout", auth, async (req, res) => {
     try {
@@ -154,9 +182,9 @@ router.get("/users/device-link/:uid/:pid/:sid", async (req, res, next) => {
     const package = await Packages.findOne({ _id: req.params.pid });
     const deviceInfo = await SubCategaries.findOne({ _id: req.params.sid });
     var message = [];
-    for (let i = 0; i < deviceInfo.messages.length;i++) {
-        const msg=await Messages.findOne({ _id:deviceInfo.messages[i]._id });
-        message[i]=msg.message;
+    for (let i = 0; i < deviceInfo.messages.length; i++) {
+        const msg = await Messages.findOne({ _id: deviceInfo.messages[i]._id });
+        message[i] = msg.message;
     }
     console.log(message);
     res.render("qrinfo", {
@@ -171,7 +199,7 @@ router.get("/users/device-link/:uid/:pid/:sid", async (req, res, next) => {
         call_number: user.emergency_number,
 
         device_name: deviceInfo.title,
-        device_messages:message
+        device_messages: message
     });
 })
 
