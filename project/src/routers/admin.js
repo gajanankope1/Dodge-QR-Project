@@ -109,10 +109,10 @@ router.get("/admin/all_packages", (req, res) => {
 });
 
 router.post("/admin/add_package", async (req, res) => {
-  const package = new Packages(req.body);
+  const package1 = new Packages(req.body);
   try {
-    await package.save();
-    res.send(package);
+    await package1.save();
+    res.send(package1);
   } catch (e) {
     res.status(404).send(e);
   }
@@ -122,8 +122,8 @@ router.patch("/admin/update_package", (req, res) => {
   Packages.findOneAndUpdate({ package: req.body.package }, req.body, {
     new: true,
   })
-    .then((package) => {
-      res.status(200).send(package);
+    .then((package1) => {
+      res.status(200).send(package1);
     })
     .catch((e) => {
       res.status(404).send(e);
@@ -132,9 +132,9 @@ router.patch("/admin/update_package", (req, res) => {
 
 router.delete("/admin/delete_package", (req, res) => {
   Packages.findOneAndDelete(req.body, { new: true })
-    .then((package) => {
-      if (!package) return res.status(404).send("package is not");
-      res.send(package);
+    .then((package1) => {
+      if (!package1) return res.status(404).send("package is not");
+      res.send(package1);
     })
     .catch((e) => {
       res.send(e);
@@ -185,7 +185,7 @@ router.delete("/admin/delete_message", (req, res) => {
 });
 
 router.get("/admin/all_users", async (req, res) => {
-  const package = await Purchase_History.aggregate(
+  const package1 = await Purchase_History.aggregate(
     [
       {
         $lookup: {
