@@ -39,13 +39,10 @@ const userSchema = new mongoose.Schema({
     address: {
         type: String,
         required: true
+    },
+    google_token: {
+        type:String
     }
-    // tokens:[{
-    //     token:{
-    //         type:String,
-    //         required:true
-    //     }
-    // }]
 });
 
 userSchema.methods.generateAuthToken = async function () {

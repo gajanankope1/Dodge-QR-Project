@@ -7,6 +7,7 @@ const Purchase_History = require("../models/purchase_history");
 const Packages = require("../models/admin/packages");
 const SubCategaries = require("../models/admin/subcategaries");
 const Messages = require("../models/admin/messages");
+const checkAuthenticated = require("../middlewere/googleAuth");
 const auth = require("../middlewere/auth");
 const router = new express.Router();
 
@@ -25,7 +26,6 @@ router.post("/users/register", async (req, res) => {
         res.send(user);
     } catch (e) {
         res.status(404).send(e);
-
     }
 });
 
@@ -52,7 +52,8 @@ router.post('/users/loginwithgoogle', (req, res) => {
             audience: CLIENT_ID,
         });
         const payload = ticket.getPayload();
-        const userid = payload['sub'];
+        const user = new Users({ name: payload.name, whatsapp_primary_number: 7878787865, emergency_number: 8978563412, email: payload.email, password: payload.at_hash, address: "pune,maharashtra", google_token: token });
+        await user.save();
     }
     verify()
         .then(() => {
@@ -60,8 +61,11 @@ router.post('/users/loginwithgoogle', (req, res) => {
             console.log('loggin successfully')
         })
         .catch(console.error);
-
 })
+
+router.get("/google_profile", checkAuthenticated, (req, res) => {
+    res.send(req.user);
+});
 
 router.post("/users/user_logout", auth, async (req, res) => {
     try {
